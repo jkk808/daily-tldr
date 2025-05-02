@@ -1,7 +1,7 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
 interface GmailMessagePart {
