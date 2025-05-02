@@ -1,11 +1,8 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 
 export default function SignIn() {
-  const router = useRouter();
-
   const handleSignIn = async () => {
     try {
       await signIn('google', { callbackUrl: '/' });

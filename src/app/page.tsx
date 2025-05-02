@@ -81,7 +81,7 @@ const convertUrlsToLinks = (text: string) => {
 };
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const [messages, setMessages] = useState<TLDRMessage[]>([]);
@@ -163,7 +163,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Today's TLDR</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Today&apos;s TLDR</h1>
             <p className="text-gray-500 dark:text-gray-400 mt-1">
               {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',

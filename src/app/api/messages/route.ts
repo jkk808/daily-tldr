@@ -4,13 +4,30 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
 import { NextResponse } from 'next/server';
 
-interface CategorizedMessage {
+interface GmailMessagePart {
+  mimeType: string;
+  body: {
+    data: string;
+  };
+}
+
+interface GmailMessageHeader {
+  name: string;
+  value: string;
+}
+
+interface GmailMessagePayload {
+  headers: GmailMessageHeader[];
+  parts?: GmailMessagePart[];
+  body?: {
+    data: string;
+  };
+}
+
+interface GmailMessage {
   id: string;
   snippet: string;
-  subject: string;
-  date: string;
-  content: string;
-  category: 'today' | 'ai' | 'web' | 'design';
+  payload: GmailMessagePayload;
 }
 
 function categorizeMessage(content: string): 'today' | 'ai' | 'web' | 'design' {
@@ -43,14 +60,19 @@ export async function GET() {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Get today's date in YYYY/MM/DD format for Gmail search
+    // Get today's date range for Gmail search
     const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Format dates for Gmail search (YYYY/MM/DD)
     const todayStr = today.toISOString().split('T')[0].replace(/-/g, '/');
+    const yesterdayStr = yesterday.toISOString().split('T')[0].replace(/-/g, '/');
 
     // Search for messages from TLDR today
     const response = await gmail.users.messages.list({
       userId: 'me',
-      q: `from:dan@tldrnewsletter.com after:${todayStr}`,
+      q: `from:dan@tldrnewsletter.com after:${yesterdayStr} before:${todayStr}`,
       maxResults: 10,
     });
 
@@ -66,12 +88,12 @@ export async function GET() {
         format: 'full',
       });
 
-      const getMessageContent = (message: any): string => {
+      const getMessageContent = (message: GmailMessage): string => {
         if (!message.payload) return '';
         
         if (message.payload.parts) {
           const textPart = message.payload.parts.find(
-            (part: any) => part.mimeType === 'text/plain'
+            (part) => part.mimeType === 'text/plain'
           );
           
           if (textPart) {
@@ -86,26 +108,26 @@ export async function GET() {
         return '';
       };
 
-      const getMessageSubject = (message: any): string => {
+      const getMessageSubject = (message: GmailMessage): string => {
         const headers = message.payload?.headers || [];
-        const subjectHeader = headers.find((header: any) => header.name === 'Subject');
+        const subjectHeader = headers.find((header) => header.name === 'Subject');
         return subjectHeader?.value || 'No Subject';
       };
 
-      const getMessageDate = (message: any): string => {
+      const getMessageDate = (message: GmailMessage): string => {
         const headers = message.payload?.headers || [];
-        const dateHeader = headers.find((header: any) => header.name === 'Date');
+        const dateHeader = headers.find((header) => header.name === 'Date');
         return dateHeader?.value || '';
       };
 
-      const content = getMessageContent(fullMessage.data);
+      const content = getMessageContent(fullMessage.data as GmailMessage);
       const category = categorizeMessage(content);
 
       return {
         id: message.id!,
         snippet: fullMessage.data.snippet || '',
-        subject: getMessageSubject(fullMessage.data),
-        date: getMessageDate(fullMessage.data),
+        subject: getMessageSubject(fullMessage.data as GmailMessage),
+        date: getMessageDate(fullMessage.data as GmailMessage),
         content,
         category,
       };
