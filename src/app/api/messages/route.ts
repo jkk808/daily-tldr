@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { NextResponse } from 'next/server';
 
+export const dynamic = "force-dynamic";
+
 interface GmailMessagePart {
   mimeType: string;
   body: {
@@ -60,19 +62,17 @@ export async function GET() {
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
-    // Get today's date range for Gmail search
+    // Get today's date at midnight for Gmail search
     const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    today.setHours(0, 0, 0, 0);
     
-    // Format dates for Gmail search (YYYY/MM/DD)
+    // Format date for Gmail search (YYYY/MM/DD)
     const todayStr = today.toISOString().split('T')[0].replace(/-/g, '/');
-    const yesterdayStr = yesterday.toISOString().split('T')[0].replace(/-/g, '/');
 
-    // Search for messages from TLDR today
+    // Search for messages from TLDR after midnight today
     const response = await gmail.users.messages.list({
       userId: 'me',
-      q: `from:dan@tldrnewsletter.com after:${yesterdayStr} before:${todayStr}`,
+      q: `from:dan@tldrnewsletter.com after:${todayStr}`,
       maxResults: 10,
     });
 
